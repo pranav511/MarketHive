@@ -12,7 +12,8 @@ exports.registerUser = async (data) => {
 
   try {
 
-    const { name, email, password, phone, role } = data;
+    const { name, email, password, phone } = data;
+    let { role_id } = data;
 
     // Check duplicate
     const [existing] = await pool.query(
@@ -34,6 +35,25 @@ exports.registerUser = async (data) => {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // ✅ ADD ROLE LOGIC HERE
+    role_id = role_id || 3;
+
+    if (role_id) {
+      const [roleData] = await pool.query(
+        "SELECT id FROM roles WHERE id = ?",
+        [role_id]
+      );
+
+      if (roleData.length === 0) {
+        throw {
+          status: 400,
+          message: "Invalid role provided"
+        };
+      }
+
+      role_id = roleData[0].id;
+    }
+
     // OTP
     const otp = generateOTP();
     const otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000);
@@ -41,9 +61,9 @@ exports.registerUser = async (data) => {
     // Insert user (unverified)
     await pool.query(
       `INSERT INTO users 
-      (name,email,password,phone,role,otp,otp_expires_at,is_verified) 
+      (name,email,password,phone,role_id,otp,otp_expires_at,is_verified) 
       VALUES (?,?,?,?,?,?,?,0)`,
-      [name, email, hashedPassword, phone, role || "user", otp, otpExpiresAt]
+      [name, email, hashedPassword, phone, role_id, otp, otpExpiresAt]
     );
 
     // Send OTP
@@ -133,11 +153,11 @@ exports.loginUser = async ({ email, password }) => {
   }
 
   const accessToken = jwt.sign(
-    { id: user.id, role: user.role },
+    { id: user.id, role_id: user.role_id },
     process.env.JWT_SECRET,
-    { expiresIn: "15m" }
+    { expiresIn: "1d" }
   );
-
+  
   const refreshToken = jwt.sign(
     { id: user.id, sessionId },
     process.env.REFRESH_SECRET,
@@ -163,6 +183,7 @@ exports.refreshAccessToken = async (refreshToken) => {
       process.env.REFRESH_SECRET
     );
 
+    console.log(decoded);
     const redisKey = `refreshToken:${decoded.id}:${decoded.sessionId}`;
 
     const storedToken = await redisClient.get(redisKey);
@@ -173,7 +194,7 @@ exports.refreshAccessToken = async (refreshToken) => {
 
     // new access token
     const newAccessToken = jwt.sign(
-      { id: decoded.id, role:decoded.role },
+      { id: decoded.id, role: decoded.role },
       process.env.JWT_SECRET,
       { expiresIn: "15m" }
     );
@@ -200,5 +221,51 @@ exports.refreshAccessToken = async (refreshToken) => {
   } catch (err) {
     throw { status: 401, message: "Invalid refresh token" };
   }
+
+};
+
+
+exports.blacklistAccessToken = async (accessToken) => {
+
+  if (!accessToken) return;
+
+  const decodedAccess = jwt.decode(accessToken);
+
+  const expiry =
+    decodedAccess.exp - Math.floor(Date.now() / 1000);
+
+  // if already expired don't store
+  if (expiry <= 0) return;
+
+  await redisClient.set(
+    `blacklist:${accessToken}`,
+    "true",
+    { EX: expiry }
+  );
+
+};
+
+
+exports.logoutUser = async (refreshToken, accessToken) => {
+
+  if (!refreshToken) {
+    return { message: "Already logged out" };
+  }
+
+  const decoded = jwt.verify(
+    refreshToken,
+    process.env.REFRESH_SECRET
+  );
+
+  await redisClient.del(
+    `refreshToken:${decoded.id}:${decoded.sessionId}`
+  );
+
+  await exports.blacklistAccessToken(accessToken);
+
+  return {
+    success: true,
+    message: "Logged out successfully"
+  };
 
 };

@@ -1,44 +1,44 @@
-const router = require("express").Router();
+const express = require("express");
+const router = express.Router();
 
 const categoryController = require("../controllers/categoryController");
 const validate = require("../middlewares/validate");
-const verifyAccessToken = require("../middlewares/authorizeRole");
-const isAdmin = require("../middlewares/authorizeRole");
+const { createCategorySchema, updateCategorySchema } = require("../validators/categoryValidation");
+const { authenticate, checkRole } = require("../middlewares/authMiddleware");
 
-const {
-  createCategorySchema,
-  updateCategorySchema
-} = require("../validators/categoryValidation");
 
-// CREATE (Admin)
+// Create Category (Admin only)
 router.post(
-  "/categories",
-  verifyAccessToken,
-  isAdmin,
+  "/",
+  authenticate,
   validate(createCategorySchema),
+  checkRole(["admin"]),
   categoryController.createCategory
 );
 
-// GET (Public)
+
+// Get Categories (Public)
 router.get(
-  "/categories",
+  "/",
   categoryController.getCategories
 );
 
-// UPDATE (Admin)
+
+// Update Category
 router.put(
-  "/categories/:id",
-  verifyAccessToken,
-  isAdmin,
+  "/:id",
+  authenticate,
   validate(updateCategorySchema),
+  checkRole(["admin"]),
   categoryController.updateCategory
 );
 
-// DELETE (Admin)
+
+// Delete Category
 router.delete(
-  "/categories/:id",
-  verifyAccessToken,
-  isAdmin,
+  "/:id",
+  authenticate,
+  checkRole(["admin"]),
   categoryController.deleteCategory
 );
 

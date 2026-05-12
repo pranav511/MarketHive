@@ -85,50 +85,25 @@ exports.refreshToken = async (req, res, next) => {
 
 };
 
+
 exports.logout = async (req, res, next) => {
   try {
 
     const refreshToken = req.cookies.refreshToken;
 
     const authHeader = req.headers.authorization;
-    const accessToken = authHeader && authHeader.split(" ")[1];
+    const accessToken =
+      authHeader && authHeader.split(" ")[1];
 
-    if (!refreshToken) {
-      return res.json({ message: "Already logged out" });
-    }
-
-    const decoded = jwt.verify(
-      refreshToken,
-      process.env.REFRESH_SECRET
-    );
-    console.log(decoded);
-    
-
-    // remove refresh token
-    await redisClient.del(
-      `refreshToken:${decoded.id}:${decoded.sessionId}`
-    );
-    // blacklist access token
-    if (accessToken) {
-
-      const decodedAccess = jwt.decode(accessToken);
-
-      const expiry =
-        decodedAccess.exp - Math.floor(Date.now() / 1000);
-
-      await redisClient.set(
-        `blacklist:${accessToken}`,
-        "true",
-        { EX: expiry }
+    const result =
+      await authService.logoutUser(
+        refreshToken,
+        accessToken
       );
-    }
 
     res.clearCookie("refreshToken");
 
-    res.json({
-      success: true,
-      message: "Logged out successfully"
-    });
+    res.json(result);
 
   } catch (err) {
     next(err);

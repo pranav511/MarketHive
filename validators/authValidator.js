@@ -8,7 +8,10 @@ const registerSchema = Joi.object({
   email: Joi.string().email().required(),
   password: Joi.string().min(6).required(),
   phone: Joi.string().length(10).required(),
-  role: Joi.string().valid('admin','user').required()
+  role_id: Joi.number()
+  .integer()
+  .valid(1,2,3)
+  .optional()
 });
 
 const verifyOtpSchema = Joi.object({

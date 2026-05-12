@@ -5,6 +5,7 @@ const { register, verifyOtp, login, refreshToken, logout } = require("../control
 const validate = require("../middlewares/validate");
 const { registerSchema, verifyOtpSchema, loginSchema } = require("../validators/authValidator");
 const loginLimiter = require("../middlewares/loginLimiter");
+const checkBlacklist  = require('../middlewares/checkBlacklist')
 
 router.post(
 "/register",
@@ -32,6 +33,7 @@ router.post(
 
 router.post(
    "/logout", 
+   checkBlacklist,
    logout
 );
 

@@ -1,14 +1,15 @@
 const categoryService = require("../services/categoryService");
 
-// CREATE
 exports.createCategory = async (req, res, next) => {
   try {
 
-    const result = await categoryService.createCategory(req.body);
+    const result = await categoryService.createCategory(
+      req.body
+    );
 
     res.status(201).json({
       success: true,
-      data: result
+      category: result
     });
 
   } catch (err) {
@@ -16,15 +17,15 @@ exports.createCategory = async (req, res, next) => {
   }
 };
 
-// GET ALL
+
 exports.getCategories = async (req, res, next) => {
   try {
 
-    const data = await categoryService.getCategories();
+    const result = await categoryService.getCategories();
 
     res.json({
       success: true,
-      data
+      categories: result
     });
 
   } catch (err) {
@@ -32,7 +33,7 @@ exports.getCategories = async (req, res, next) => {
   }
 };
 
-// UPDATE
+
 exports.updateCategory = async (req, res, next) => {
   try {
 
@@ -41,26 +42,22 @@ exports.updateCategory = async (req, res, next) => {
       req.body
     );
 
-    res.json({
-      success: true,
-      data: result
-    });
+    res.json(result);
 
   } catch (err) {
     next(err);
   }
 };
 
-// DELETE
+
 exports.deleteCategory = async (req, res, next) => {
   try {
 
-    const result = await categoryService.deleteCategory(req.params.id);
+    const result = await categoryService.deleteCategory(
+      req.params.id
+    );
 
-    res.json({
-      success: true,
-      data: result
-    });
+    res.json(result);
 
   } catch (err) {
     next(err);

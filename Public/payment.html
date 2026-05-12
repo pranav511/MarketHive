@@ -1,0 +1,108 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Razorpay Test</title>
+  </head>
+
+  <body>
+    <h2>Pay Order</h2>
+
+    <button id="payBtn">Pay Now</button>
+
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+    <script>
+      document.getElementById("payBtn").onclick =
+        async function () {
+
+          // 1️⃣ Create Razorpay Order
+          const res = await fetch(
+            "http://localhost:8989/api/payments/create-order",
+            {
+              method: "POST",
+
+              headers: {
+                "Content-Type": "application/json",
+              },
+
+              body: JSON.stringify({
+                orderId: 10
+              }),
+            }
+          );
+
+          const data = await res.json();
+
+          console.log(data);
+
+          // 2️⃣ Razorpay Options
+          const options = {
+
+            key: "rzp_test_SkD5nACTtJGaYU",
+
+            amount: data.order.amount,
+
+            currency: "INR",
+
+            name: "My Store",
+
+            description: "Test Payment",
+
+            order_id: data.order.id,
+
+            // 3️⃣ SUCCESS HANDLER
+            handler: async function (response) {
+
+              console.log("PAYMENT RESPONSE");
+              console.log(response);
+
+              // 4️⃣ VERIFY PAYMENT
+              const verifyRes = await fetch(
+                "http://localhost:8989/api/payments/verify-payment",
+                {
+                  method: "POST",
+
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+
+                  body: JSON.stringify(response),
+                }
+              );
+
+              const verifyData =
+                await verifyRes.json();
+
+              console.log(verifyData);
+
+              alert(verifyData.message);
+            },
+
+            theme: {
+              color: "#3399cc",
+            },
+          };
+
+          // 5️⃣ OPEN RAZORPAY
+          const rzp = new Razorpay(options);
+
+          // 6️⃣ PAYMENT FAILED
+          rzp.on(
+            "payment.failed",
+            function (response) {
+
+              console.log("PAYMENT FAILED");
+
+              console.log(response.error);
+
+              alert(
+                JSON.stringify(response.error)
+              );
+            }
+          );
+
+          rzp.open();
+        };
+    </script>
+  </body>
+</html>

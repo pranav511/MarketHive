@@ -11,19 +11,25 @@ const productRoutes = require("./routes/productsRoutes")
 const cartRoutes = require("./routes/cartRoutes");
 const addressRoutes = require("./routes/addressRoutes");
 const orderRoutes = require("./routes/orderRoutes");
+const adminOrderRoutes = require("./routes/adminOrderRoutes")
 const paymentRoutes = require("./routes/paymentRoutes");
+const refundRoutes = require("./routes/refundRoutes");
+
 require("dotenv").config();
 require("./jobs/cleanupJob");
 
 const app = express();
+
 // webhook route BEFORE express.json
 app.use(
   "/api/payments/webhook",
   express.raw({ type: "application/json" })
 );
 
-app.use(express.json());
-
+//Health Checkup
+app.get('/api',(req,res)=>{
+  res.send("Hey NgRok I'm here");
+});
 
 app.use(cors());
 app.use(cookieParser());
@@ -46,7 +52,9 @@ app.use("/api/product", productRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/address", addressRoutes);
 app.use("/api/orders", orderRoutes);
+app.use("/api/admin/orders", adminOrderRoutes);
 app.use("/api/payments", paymentRoutes);
+app.use("/api/refunds", refundRoutes);
 
 app.use(errorHandler);
 

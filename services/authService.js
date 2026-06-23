@@ -168,7 +168,7 @@ exports.loginUser = async ({ email, password }) => {
   await redisClient.set(
     `refreshToken:${user.id}:${sessionId}`,
     refreshToken,
-    { EX: 7 * 24 * 60 * 60 }
+    { EX: 7 * 24 * 60 * 60 }//7 day
   );
 
   return { accessToken, refreshToken };

@@ -149,6 +149,29 @@ ADD razorpay_order_id VARCHAR(255),
 ADD razorpay_payment_id VARCHAR(255),
 ADD razorpay_signature VARCHAR(255);
 
+ALTER TABLE orders
+ADD COLUMN tracking_id VARCHAR(100),
+ADD COLUMN courier_name VARCHAR(100),
+ADD COLUMN shipment_status ENUM(
+  'processing',
+  'shipped',
+  'in_transit',
+  'out_for_delivery',
+  'delivered'
+) DEFAULT 'processing',
+ADD COLUMN estimated_delivery DATE;
+
+ALTER TABLE orders
+ADD COLUMN refund_status ENUM(
+  'not_requested',
+  'requested',
+  'processing',
+  'refunded',
+  'failed'
+) DEFAULT 'not_requested',
+
+ADD COLUMN refund_id VARCHAR(255);
+
 CREATE TABLE order_items (
   id INT PRIMARY KEY AUTO_INCREMENT,
   order_id INT,
